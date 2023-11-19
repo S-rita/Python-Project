@@ -1,12 +1,11 @@
 from tkinter import *
-from tkinter import messagebox
-from tkinter import Canvas, Scrollbar
+from tkinter import messagebox, Canvas, Scrollbar
 from datetime import datetime
 from PIL import Image, ImageTk
 import matplotlib.pyplot as plt
 from io import BytesIO
-import numpy as np
 import json
+
 
 ''''''''''''' BASE FORM '''''''''''''
 class BaseForm:
@@ -14,16 +13,6 @@ class BaseForm:
         self.window = window
         self.activity_type = activity_type
         self.history = []
-        
-    def submit_form(self, window, *args):
-        current_date = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-
-        entry = {"Date": current_date, "Activity Type": self.activity_type}
-        entry.update({f"Question {i + 1}": arg for i, arg in enumerate(args)})
-        self.history.append(entry)
-        
-        messagebox.showinfo(f"{self.activity_type} Submission", f"{self.activity_type} registered successfully!")
-        window.destroy()
 
     def confirm_exit(self, health_window):
         result = messagebox.askquestion("Confirm Exit", "Your entry has not been saved. Are you sure you want to quit?",
@@ -123,16 +112,30 @@ class MindForm(BaseForm):
 
     ########## SUMBIT & CLOSE ##########
         submit_button = Button(mental_window, text="SUBMIT", font=("Comic Sans MS", 20, "bold"), fg="green",
-                               command=lambda: self.submit_form(mental_window, "Mental Health", moods_var.get(),
-                                                               activity_var.get(), who_var.get()))
+                               command=lambda: self.submit_mind_form(mental_window, "Mental Health",
+                                                                moods_var.get(), activity_var.get(), who_var.get()))
 
         submit_button.grid(row=11, column=0, columnspan=10, pady=(30,0), padx=10)
 
         close_button = Button(mental_window, text="X", font=("Comic Sans MS", 10, "bold"), fg="red", command=lambda: self.confirm_exit(mental_window))
         close_button.place(relx=1.0, rely=0, anchor=NE)
 
-    def submit_form(self, window, activity_type, *args):
-        super().submit_form(window, activity_type, *args)
+    def submit_mind_form(self, window, activity_type, mood, activity, with_whom):
+        current_date = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+
+        entry = {
+            "Date": current_date,
+            "Activity Type": activity_type,
+            "Mood": mood,
+            "Activity": activity,
+            "with": with_whom
+        }
+
+        self.history.append(entry)
+
+        messagebox.showinfo(f"{activity_type} Submission", f"{activity_type} registered successfully!")
+
+        window.destroy()
 
     def confirm_exit(self, mental_window):
         super().confirm_exit(mental_window)
@@ -167,7 +170,7 @@ class MunchForm(BaseForm):
             img = ImageTk.PhotoImage(Image.open(path).resize((60, 60)))
             images_foods.append(img)
 
-            button = Radiobutton(physical_window, image=img, variable=food_var, value=idx)
+            button = Radiobutton(physical_window, image=img, variable=food_var, value=label_text)
             button.image = img
             button.grid(row=1, column=idx, padx=5)
 
@@ -192,7 +195,7 @@ class MunchForm(BaseForm):
             img = ImageTk.PhotoImage(Image.open(path).resize((60, 60)))
             images_who_exercise.append(img)
 
-            button = Radiobutton(physical_window, image=img, variable=who_var, value=path)
+            button = Radiobutton(physical_window, image=img, variable=who_var, value=label_text)
             button.image = img
             button.grid(row=4, column=idx, padx=5)
 
@@ -262,7 +265,7 @@ class MunchForm(BaseForm):
             img = ImageTk.PhotoImage(Image.open(path).resize((60, 60)))
             images_sleep.append(img)
 
-            button = Radiobutton(physical_window, image=img, variable=sleep_feeling, value=path)
+            button = Radiobutton(physical_window, image=img, variable=sleep_feeling, value=label_text)
             button.image = img
             button.grid(row=24, column=idx+1)
 
@@ -270,14 +273,37 @@ class MunchForm(BaseForm):
             label.grid(row=25, column=idx+1)
 
     ########## SUMBIT & CLOSE ##########
-        submit_button = Button(physical_window, text="SUBMIT", fg='green', font=("Comic Sans MS", 20, "bold"), command=lambda: self.submit_form(physical_window, "Physical Health", exercise_var.get(), food_var.get(), water_entry.get(), sleep_entry.get()))
+        submit_button = Button(physical_window, text="SUBMIT", fg='green', font=("Comic Sans MS", 20, "bold"),
+                            command=lambda: self.submit_form(physical_window, "Physical Health", 
+                                                            food_var.get(), who_var.get(),
+                                                            water_entry.get(), exercise_var.get(),
+                                                            duration_entry.get(), sleep_entry.get(),
+                                                            sleep_feeling.get()))
         submit_button.grid(row=27, columnspan=4, pady=30)
         
         close_button = Button(physical_window, text="X", fg='red', font=("Comic Sans MS", 10, "bold"), command=lambda: self.confirm_exit(physical_window))
         close_button.place(relx=1.0, rely=0, anchor=NE)
 
-    def submit_form(self, window, activity_type, *args):
-        super().submit_form(window, activity_type, *args)
+    def submit_munch_form(self, window, activity_type, food_type, with_whom, water_intake, exercise_type, exercise_duration, sleep_hours, sleep_quality):
+        current_date = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+
+        entry = {
+            "Date": current_date,
+            "Activity Type": activity_type,
+            "Meal": food_type,
+            "With": with_whom,
+            "Water Intake": water_intake,
+            "Exercise Type": exercise_type,
+            "Exercise Duration": exercise_duration,
+            "Sleep Hours": sleep_hours,
+            "Sleep Quality": sleep_quality
+        }
+
+        self.history.append(entry)
+
+        messagebox.showinfo(f"{activity_type} Submission", f"{activity_type} registered successfully!")
+
+        window.destroy()
 
     def confirm_exit(self, physical_window):
         super().confirm_exit(physical_window)
@@ -287,7 +313,9 @@ class MunchForm(BaseForm):
         current_value = entry.get()
         try:
             current_value = int(current_value.split(' ')[0]) if current_value else 0
-            if current_value + amount < 0 or current_value + amount > 28000:
+            if current_value + amount < 0:
+                raise ValueError("Water intake cannot be below 0")
+            elif current_value + amount > 28000:
                 raise ValueError("Excessive water intake.\nShould be less than 28,000ml/day")
         except ValueError as e:
             messagebox.showwarning("Input Error", str(e))
@@ -300,7 +328,7 @@ class MunchForm(BaseForm):
         try:
             current_value = int(current_value.split(' ')[0]) if current_value else 0
             if current_value + amount < 0:
-                raise ValueError("Exercise duration cannot be negative.")
+                raise ValueError("Exercise duration cannot be below 0.")
         except ValueError as e:
             messagebox.showwarning("Input Error", str(e))
             return
@@ -312,7 +340,7 @@ class MunchForm(BaseForm):
         try:
             current_value = int(current_value.split(' ')[0]) if current_value else 0
             if current_value + hours < 0:
-                raise ValueError("Sleep hours cannot be negative.")
+                raise ValueError("Sleep hours cannot be below 0.")
         except ValueError as e:
             messagebox.showwarning("Input Error", str(e))
             return
@@ -339,24 +367,24 @@ class Dashboard:
     ########## COUNT ##########
         for entry in self.history:
             if entry['Activity Type'] == 'Mental Health':
-                user_mood_data[entry['Question 1']] = user_mood_data.get(entry['Question 1'], 0) + 1
+                user_mood_data[entry['Mood']] = user_mood_data.get(entry['Mood'], 0) + 1
             elif entry['Activity Type'] == 'Physical Health':
-                exercise_data[entry['Question 1']] = exercise_data.get(entry['Question 1'], 0) + 1
-                if 'Question 4' in entry:
-                    sleep_duration_str = entry['Question 4']
+                exercise_data[entry['Exercise Type']] = exercise_data.get(entry['Exercise Type'], 0) + 1
+                if 'Sleep Hours' in entry:
+                    sleep_duration_str = entry['Sleep Hours']
                     sleep_duration = float(sleep_duration_str.split()[0])
                     sleep_data[entry['Date']] = sleep_duration
 
+    ########## SCROLLBAR ##########
+
         canvas = Canvas(dashboard_window)
         canvas.pack(side=LEFT, fill=BOTH, expand=True)
-
-    ########## SCROLLBAR ##########
+        
+        frame = Frame(canvas)
+        canvas.create_window((0, 0), window=frame, anchor='nw')
 
         scrollbar = Scrollbar(dashboard_window, orient=VERTICAL, command=canvas.yview)
         scrollbar.pack(side=RIGHT, fill=Y)
-
-        frame = Frame(canvas)
-        canvas.create_window((0, 0), window=frame, anchor='nw')
 
         def on_frame_configure(event):
             canvas.configure(scrollregion=canvas.bbox("all"), yscrollcommand=scrollbar.set)
@@ -367,7 +395,7 @@ class Dashboard:
         canvas.config(scrollregion=canvas.bbox("all"), yscrollcommand=scrollbar.set)
         
     ########## MOODS BAR CHART ##########
-        def plot_to_image(data, title, xlabel, ylabel):
+        def plot_bar_chart(data, title, xlabel, ylabel):
             plt.figure(figsize=(8, 4))
             plt.bar(data.keys(), data.values(), color='skyblue')
             plt.title(title)
@@ -381,7 +409,7 @@ class Dashboard:
             buf.seek(0)
             return ImageTk.PhotoImage(Image.open(buf))
         
-        mood_chart = plot_to_image(user_mood_data, 'Mood Distribution', 'Mood', 'Count')
+        mood_chart = plot_bar_chart(user_mood_data, 'Mood Distribution', 'Mood', 'Count')
         mood_chart_label = Label(frame, image=mood_chart)
         mood_chart_label.image = mood_chart
         mood_chart_label.pack()
@@ -404,27 +432,26 @@ class Dashboard:
         exercise_chart_label.pack()
 
     ########## SLEEP LINE GRAPH ##########
+        def plot_line_graph(x_data, y_data, title, xlabel, ylabel, color='green'):
+            plt.figure(figsize=(8, 4))
+            plt.plot(x_data, y_data, marker='o', linestyle='-', color=color)
+            plt.title(title)
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
+            plt.xticks(rotation=45, ha='right')
+            plt.tight_layout()
+
+            buf = BytesIO()
+            plt.savefig(buf, format='png')
+            buf.seek(0)
+            return ImageTk.PhotoImage(Image.open(buf))
+    
         dates = sorted(sleep_data.keys())
         sleep_values = [sleep_data[date] for date in dates]
-
-        plt.figure(figsize=(8, 4))
-        plt.plot(dates, sleep_values, marker='o', linestyle='-', color='green')
-        plt.title('Sleep Duration Over Time')
-        plt.xlabel('Date')
-        plt.ylabel('Hours of Sleep')
-        plt.xticks(rotation=45, ha='right')
-        plt.tight_layout()
-        
-        sleep_chart = ImageTk.PhotoImage(Image.fromarray(self.plot_to_array()))
+        sleep_chart = plot_line_graph(dates, sleep_values, 'Sleep Duration Over Time', 'Date', 'Hours of Sleep')
         sleep_chart_label = Label(frame, image=sleep_chart)
         sleep_chart_label.image = sleep_chart
         sleep_chart_label.pack()
-
-    def plot_to_array(self):
-        buf = BytesIO()
-        plt.savefig(buf, format='png')
-        buf.seek(0)
-        return np.array(Image.open(buf))
     
 
 ''''''''''''' MAIN CLASS '''''''''''''
@@ -480,7 +507,7 @@ class Mind_n_Munch:
 
     ########## SAVE & EXIT ##########
     def save_data(self):
-        file_path = "mind_n_munch_data_.json"
+        file_path = "mind_n_munch_data.json"
         try:
             with open(file_path, "w") as file:
                 json.dump(self.history, file)
