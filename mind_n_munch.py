@@ -5,14 +5,19 @@ from PIL import Image, ImageTk
 import matplotlib.pyplot as plt
 from io import BytesIO
 import json
+from abc import ABC, abstractmethod
 
 
 ''''''''''''' BASE FORM '''''''''''''
-class BaseForm:
+class BaseForm(ABC):
     def __init__(self, window, activity_type):
         self.window = window
         self.activity_type = activity_type
         self.history = []
+
+    @abstractmethod
+    def form(self):
+        pass
 
     def confirm_exit(self, health_window):
         result = messagebox.askquestion("Confirm Exit", "Your entry has not been saved. Are you sure you want to quit?",
@@ -26,7 +31,7 @@ class MindForm(BaseForm):
     def __init__(self, window):
         super().__init__(window, "Mental Health")
 
-    def mind_form(self):
+    def form(self):
         mental_window = Toplevel(self.window)
         mental_window.title("MIND")
         mental_window.geometry("900x500")
@@ -147,7 +152,7 @@ class MunchForm(BaseForm):
     def __init__(self, window):
         super().__init__(window, "Physical Health")
 
-    def munch_form(self):
+    def form(self):
         physical_window = Toplevel(self.window)
         physical_window.title("MUNCH")
         physical_window.geometry("410x900")
@@ -462,7 +467,8 @@ class Mind_n_Munch:
         self.window.geometry("400x550")
 
         self.history = []
-
+    
+        
         menu_button = Menubutton(self.window, text="Menu", font=("Comic Sans MS", 13))
         menu_button.menu = Menu(menu_button, tearoff=0)
         menu_button["menu"] = menu_button.menu
@@ -497,10 +503,10 @@ class Mind_n_Munch:
         self.window.mainloop()
 
     def mind_form(self):
-        self.mind_health_form.mind_form()
+        self.mind_health_form.form()
 
     def munch_form(self):
-        self.physical_health_form.munch_form()
+        self.physical_health_form.form()
 
     def dashboard(self):
         self.dashboard_view.dashboard()
